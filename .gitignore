@@ -1,0 +1,25 @@
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Node.js / Vite
+/frontend/node_modules/
+/frontend/dist/
+/frontend/dist-single/
+/frontend/*.log
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Operating system
+.DS_Store
+Thumbs.db
+Desktop.ini

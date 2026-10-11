@@ -1,0 +1,13 @@
+# Dependencies and generated build output
+/node_modules/
+/dist/
+/dist-single/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,30 @@
+﻿/* INTEGRATION GLUE. Everything that makes the teammates' modules sit inside the new base lives here
+   so their own files stay as delivered. Delete a block = undo that one fix. */
+
+/* 1. Token bridge: Ateeb's kit names that the base does not define (shared names like --bg-0/--border/--radius already match) */
+:root{
+  --text-1:var(--text);--text-2:var(--text-dim);
+  --accent:var(--cyan);--accent-2:#4aa8ff;
+  --sev-critical:var(--critical);--sev-high:var(--high);--sev-medium:var(--medium);--sev-low:var(--low);
+  --gap:16px;--fast:150ms;--base:300ms;--slow:800ms;--font-ui:var(--font-body);
+}
+
+/* 2. z-index: base rule = overlays between 100 and 800 (palette 900, boot 2000). Ateeb's toasts were 1000. */
+.dt-toast__stack{z-index:800 !important}
+
+/* 3. Glass look for the teammates' cards (same surface as the base .card) */
+.dt-card,.dt-stat,.threat-card,.stat-card{background:var(--panel);border-color:var(--border);backdrop-filter:blur(10px)}
+
+/* 4. Teammates' own page titles are replaced by the base PageHeader (decrypt/glitch title); keep their live controls */
+.cc{padding:0 !important;background:none !important;min-height:0 !important}
+.cc-head > div:first-child{display:none}
+.cc-head{justify-content:flex-end !important}
+.threat-page{background:transparent !important;min-height:0 !important;width:100% !important;padding:0 !important}
+.threat-page::before{display:none !important}
+.threat-header > div:first-child{display:none}
+.threat-header{justify-content:flex-end !important}
+
+/* 5. Crawler tab (Himanshu): inline styles paint an opaque full-page box; hide its title block, make the box transparent */
+.crawler-host > div{background:transparent !important;min-height:0 !important;padding:0 !important;max-width:100% !important}
+.crawler-host > div > div:first-child{border-bottom:0 !important;justify-content:flex-end !important}
+.crawler-host > div > div:first-child > div:first-child{display:none}

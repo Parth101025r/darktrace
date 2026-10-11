@@ -1,0 +1,174 @@
+.login {
+  position: relative;
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  overflow: hidden;
+  padding: 32px 20px;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(16, 57, 70, 0.3), transparent 48%),
+    linear-gradient(145deg, #030609 0%, #071018 52%, #030609 100%);
+}
+
+.login::before,
+.login::after {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  pointer-events: none;
+}
+
+.login::before {
+  inset: 0;
+  opacity: 0.3;
+  background-image:
+    linear-gradient(rgba(53, 216, 239, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53, 216, 239, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, #000 10%, transparent 75%);
+}
+
+.login::after {
+  top: 50%;
+  left: 50%;
+  width: min(600px, 100vw);
+  aspect-ratio: 1;
+  border: 1px solid rgba(53, 216, 239, 0.08);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 42px rgba(53, 216, 239, 0.018),
+    0 0 0 84px rgba(53, 216, 239, 0.014),
+    0 0 100px rgba(53, 216, 239, 0.08);
+  transform: translate(-50%, -50%);
+}
+
+.login__card {
+  display: grid;
+  width: min(100%, 420px);
+  gap: 20px;
+  padding: clamp(28px, 7vw, 44px);
+  border: 1px solid rgba(120, 200, 220, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(12, 24, 33, 0.94), rgba(5, 12, 18, 0.96));
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.55),
+    0 0 55px rgba(31, 186, 208, 0.08),
+    inset 0 1px rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(18px);
+}
+
+.login__title {
+  color: var(--cyan);
+  font-size: clamp(38px, 9vw, 48px);
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-shadow: 0 0 28px rgba(53, 216, 239, 0.28);
+}
+
+.login__sub {
+  margin-top: -12px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.login__card label {
+  display: grid;
+  gap: 8px;
+  color: #b8c8d0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.login__card input {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid rgba(120, 200, 220, 0.17);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(2, 8, 13, 0.72);
+  color: var(--text);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.login__card input:hover {
+  border-color: rgba(120, 200, 220, 0.32);
+}
+
+.login__card input:focus {
+  border-color: var(--cyan);
+  background: rgba(3, 11, 17, 0.94);
+  box-shadow: 0 0 0 3px rgba(53, 216, 239, 0.12), 0 0 22px rgba(53, 216, 239, 0.08);
+}
+
+.login__error {
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 59, 92, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 59, 92, 0.09);
+  color: #ff9cac;
+  font-size: 13px;
+}
+
+.login__btn {
+  min-height: 48px;
+  border: 1px solid rgba(89, 232, 248, 0.65);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #16aabb, #16798e);
+  box-shadow: 0 8px 24px rgba(20, 174, 194, 0.17), inset 0 1px rgba(255, 255, 255, 0.18);
+  color: #f2fdff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.login__btn:hover:not(:disabled) {
+  filter: brightness(1.14);
+  box-shadow: 0 10px 30px rgba(20, 174, 194, 0.27), inset 0 1px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.login__btn:focus-visible,
+.login__switch:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.login__btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.login__switch {
+  justify-self: center;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: #8fdce7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  transition: color 160ms ease;
+}
+
+.login__switch:hover {
+  color: #e2fbff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login__card input,
+  .login__btn,
+  .login__switch {
+    transition: none;
+  }
+}
