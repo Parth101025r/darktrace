@@ -1,12 +1,15 @@
-"""Minimal in-memory API for running the DarkTrace frontend during development.
+"""Minimal API for running the DarkTrace frontend during development.
 
 This is intentionally not the production backend. It has no database, crawler,
-external service clients, JWTs, or persistent storage. Restarting the process
-clears all accounts, sessions, alerts, and queued jobs.
+external service clients, or JWTs. Accounts, sessions, sources, and queued jobs
+are in memory; alerts are stored in Redis.
 """
 
 from __future__ import annotations
 
+import json
+import os
+from contextlib import asynccontextmanager
 import hashlib
 import hmac
 import secrets
@@ -14,11 +17,49 @@ from datetime import datetime, timezone
 from typing import Literal
 from urllib.parse import parse_qs
 
+import redis.asyncio as redis
+from dotenv import load_dotenv
+
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="DarkTrace development API", version="0.1.0-dev")
+
+load_dotenv()
+
+REDIS_URL = os.getenv("REDIS_URL")
+if not REDIS_URL:
+    raise RuntimeError("REDIS_URL is not configured")
+
+ALERTS_KEY = os.getenv("ALERTS_KEY", "darktrace:alerts")
+ALERT_ID_KEY = os.getenv("ALERT_ID_KEY", "darktrace:alerts:next_id")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_connect_timeout=5,
+        socket_timeout=5,
+    )
+    try:
+        await app.state.redis_client.ping()
+        yield
+    finally:
+        await app.state.redis_client.aclose()
+
+
+def _get_redis_client(request: Request) -> redis.Redis:
+    return request.app.state.redis_client
+
+
+async def _load_alerts(client: redis.Redis) -> list[dict]:
+    values = await client.lrange(ALERTS_KEY, 0, -1)
+    return [json.loads(value) for value in values]
+
+
+app = FastAPI(title="DarkTrace development API", version="0.1.0-dev", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -29,7 +70,6 @@ app.add_middleware(
 
 _users: dict[str, dict] = {}
 _sessions: dict[str, str] = {}
-_alerts: list[dict] = []
 _jobs: list[dict] = []
 _sources = [
     {
@@ -97,7 +137,11 @@ def _current_user(authorization: str = Header(default="")) -> dict:
 
 @app.get("/health", tags=["System"])
 async def health() -> dict:
-    return {"status": "ok", "service": "darktrace-development-api", "storage": "memory"}
+    return {
+        "status": "ok",
+        "service": "darktrace-development-api",
+        "storage": {"temporary": "memory", "alerts": "redis"},
+    }
 
 
 @app.post("/api/v1/auth/register", status_code=status.HTTP_201_CREATED, tags=["Auth"])
@@ -140,24 +184,52 @@ async def me(user: dict = Depends(_current_user)) -> dict:
     return _user_out(user)
 
 
+
 @app.get("/api/v1/alerts", tags=["Alerting"])
-async def list_alerts(_: dict = Depends(_current_user)) -> list[dict]:
-    return list(reversed(_alerts))
+async def list_alerts(
+    _: dict = Depends(_current_user),
+    client: redis.Redis = Depends(_get_redis_client),
+) -> list[dict]:
+    return await _load_alerts(client)
 
 
 @app.post("/api/v1/alerts", status_code=status.HTTP_201_CREATED, tags=["Alerting"])
-async def create_alert(payload: AlertPayload, _: dict = Depends(_current_user)) -> dict:
-    alert = {"id": f"alert_dev_{len(_alerts) + 1:03d}", **payload.model_dump(), "created_at": datetime.now(timezone.utc).isoformat()}
-    _alerts.append(alert)
+async def create_alert(
+    payload: AlertPayload,
+    _: dict = Depends(_current_user),
+    client: redis.Redis = Depends(_get_redis_client),
+) -> dict:
+    alert_id = await client.incr(ALERT_ID_KEY)
+
+    alert = {
+        "id": f"alert_dev_{alert_id:03d}",
+        **payload.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await client.lpush(ALERTS_KEY, json.dumps(alert))
     return alert
 
 
 @app.get("/api/v1/dashboard/summary", tags=["Dashboard"])
-async def dashboard_summary(_: dict = Depends(_current_user)) -> dict:
+async def dashboard_summary(
+    _: dict = Depends(_current_user),
+    client: redis.Redis = Depends(_get_redis_client),
+) -> dict:
+    alerts = await _load_alerts(client)
     counts = {severity: 0 for severity in ("critical", "high", "medium", "low")}
-    for alert in _alerts:
-        counts[alert["severity"]] += 1
-    return {"total_cases": 0, "open_cases": 0, "alerts_by_severity": counts}
+
+    for alert in alerts:
+        severity = alert.get("severity", "medium")
+        if severity in counts:
+            counts[severity] += 1
+
+    return {
+        "total_cases": 0,
+        "open_cases": 0,
+        "alerts_by_severity": counts,
+    }
+
 
 
 @app.get("/api/v1/sources", tags=["Sources"])

@@ -1,6 +1,6 @@
 # DarkTrace development setup
 
-This repository now includes a minimal development API so the frontend can run without a database, crawler, or external services. It is intentionally in-memory: restarting it clears accounts, sessions, alerts, and queued jobs.
+This repository includes a minimal development API so the frontend can run without a database or crawler. It uses Redis for alerts; accounts, sessions, sources, and queued jobs remain in memory and are cleared when the API restarts.
 
 ## Requirements
 
@@ -11,13 +11,17 @@ This repository now includes a minimal development API so the frontend can run w
 
 Open two PowerShell terminals from the repository root.
 
-### 1. Start the minimal development API
+### 1. Start Redis and the development API
 
 ```powershell
+docker run --name darktrace-redis -p 6379:6379 -d redis:7-alpine
 cd backend
+Copy-Item .env.example .env
 python -m pip install -r requirements-dev.txt
 uvicorn dev_server:app --reload --port 8000
 ```
+
+The development API reads `REDIS_URL` from `backend\.env`. If Redis is already running elsewhere, update that value before starting the API.
 
 Check that it is running:
 
@@ -39,7 +43,7 @@ Open [http://localhost:5173](http://localhost:5173), create an account, and sign
 
 - Register, sign in, sign out, and session validation
 - Dashboard reads for alerts, summary, sources, and crawl jobs
-- Threat Intelligence reads in-memory alerts
+- Threat Intelligence reads alerts stored in Redis
 - Crawler page queues jobs against one safe, local development source
 
 Queued jobs remain in `queued` state. No URLs are fetched and no crawler is started.
@@ -60,4 +64,4 @@ cd frontend
 npm run build
 ```
 
-The development API has no database files or migrations. Its data exists only while `dev_server.py` is running.
+The development API has no database files or migrations. Only alerts survive API restarts; all other development records exist only while `dev_server.py` is running.
